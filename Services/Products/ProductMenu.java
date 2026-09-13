@@ -1,5 +1,8 @@
 package Services.Products;
 
+import Exceptions.ProductNotFoundException;
+
+import java.util.InputMismatchException;
 import java.util.Scanner;
 
 public class ProductMenu {
@@ -13,13 +16,13 @@ public class ProductMenu {
 
     public void displayMenu() {
         while (true) {
-            System.out.println("\n--- Product Management ---");
-            System.out.println("11. Add Product");
-            System.out.println("12. Display Products");
-            System.out.println("13. Update Product");
-            System.out.println("14. Search Product by Name");
-            System.out.println("15. Delete Product");
-            System.out.println("0.  Back to Main Menu");
+            System.out.println("\n--- Manajemen Produk ---");
+            System.out.println("11. Tambah Produk");
+            System.out.println("12. Tampilkan Semua Produk");
+            System.out.println("13. Perbarui Produk");
+            System.out.println("14. Cari Produk berdasarkan Nama");
+            System.out.println("15. Hapus Produk");
+            System.out.println("0.  Kembali ke Menu Utama");
 
             int choice = getUserChoice();
 
@@ -44,80 +47,109 @@ public class ProductMenu {
                     handleDeleteProduct();
                     break;
                 default:
-                    System.out.println("Invalid choice. Please try again.");
+                    System.out.println("Pilihan tidak valid. Silakan coba lagi.");
             }
         }
     }
 
     private void handleAddProduct() {
-        System.out.println("\n[ Add New Product ]");
-        System.out.print("Enter Product ID: ");
-        int id = scanner.nextInt();
-        scanner.nextLine(); // Konsumsi newline
+        System.out.println("\n[ Tambah Produk Baru ]");
+        System.out.print("Masukkan ID Produk: ");
+        int id = getIntInput();
 
-        System.out.print("Enter Product Name: ");
+        System.out.print("Masukkan Nama Produk: ");
         String name = scanner.nextLine();
 
-        System.out.print("Enter Product Category: ");
+        System.out.print("Masukkan Kategori Produk: ");
         String category = scanner.nextLine();
 
-        System.out.print("Enter Product Price: ");
-        double price = scanner.nextDouble();
+        System.out.print("Masukkan Harga Produk: Rp");
+        double price = getDoubleInput();
 
-        System.out.print("Enter Product Stock: ");
-        int stock = scanner.nextInt();
-        scanner.nextLine(); // Konsumsi newline
+        System.out.print("Masukkan Stok Awal: ");
+        int stock = getIntInput();
 
         productService.createProduct(id, name, category, price, stock);
-        System.out.println(">> Product successfully added!");
+        System.out.println(">> Produk '" + name + "' berhasil ditambahkan!");
     }
 
     private void handleUpdateProduct() {
-        System.out.println("\n[ Update Product ]");
-        System.out.print("Enter Product ID to Update: ");
-        int id = scanner.nextInt();
-        scanner.nextLine();
+        System.out.println("\n[ Perbarui Data Produk ]");
+        System.out.print("Masukkan ID Produk yang ingin diperbarui: ");
+        int id = getIntInput();
 
-        System.out.print("Enter New Product Name: ");
-        String name = scanner.nextLine();
+        try {
+            // Cek dulu apakah produk ada (akan melempar ProductNotFoundException jika tidak ada)
+            Product existing = productService.getProductById(id);
+            System.out.println("Produk ditemukan: " + existing.getName());
 
-        System.out.print("Enter New Product Category: ");
-        String category = scanner.nextLine();
+            System.out.print("Masukkan Nama Baru: ");
+            String name = scanner.nextLine();
 
-        System.out.print("Enter New Product Price: ");
-        double price = scanner.nextDouble();
+            System.out.print("Masukkan Kategori Baru: ");
+            String category = scanner.nextLine();
 
-        System.out.print("Enter New Product Stock: ");
-        int stock = scanner.nextInt();
-        scanner.nextLine();
+            System.out.print("Masukkan Harga Baru: Rp");
+            double price = getDoubleInput();
 
-        productService.updateProduct(id, name, category, price, stock);
+            System.out.print("Masukkan Jumlah Stok Baru: ");
+            int stock = getIntInput();
+
+            productService.updateProduct(id, name, category, price, stock);
+        } catch (ProductNotFoundException e) {
+            System.out.println("[!] Gagal memperbarui: " + e.getMessage());
+        }
     }
 
     private void handleSearchProduct() {
-        System.out.println("\n[ Search Product ]");
-        System.out.print("Enter Product Name to Search: ");
+        System.out.println("\n[ Cari Produk ]");
+        System.out.print("Masukkan Nama Produk yang dicari: ");
         String name = scanner.nextLine();
         productService.searchProductsByName(name);
     }
 
     private void handleDeleteProduct() {
-        System.out.println("\n[ Delete Product ]");
-        System.out.print("Enter Product ID to Delete: ");
-        int id = scanner.nextInt();
-        scanner.nextLine();
-        productService.deleteProduct(id);
+        System.out.println("\n[ Hapus Produk ]");
+        System.out.print("Masukkan ID Produk yang ingin dihapus: ");
+        int id = getIntInput();
+
+        try {
+            productService.deleteProduct(id);
+        } catch (ProductNotFoundException e) {
+            System.out.println("[!] Gagal menghapus: " + e.getMessage());
+        }
     }
 
     private int getUserChoice() {
-        System.out.print("Enter your choice: ");
-        while (!scanner.hasNextInt()) {
-            System.out.println("Please enter a valid number!");
-            scanner.next();
-            System.out.print("Enter your choice: ");
+        System.out.print("Pilih opsi: ");
+        return getIntInput();
+    }
+
+    private int getIntInput() {
+        while (true) {
+            try {
+                int val = scanner.nextInt();
+                scanner.nextLine(); // Konsumsi newline
+                return val;
+            } catch (InputMismatchException e) {
+                System.out.println("[!] Input harus berupa angka bulat! Silakan coba lagi.");
+                scanner.nextLine(); // Bersihkan buffer yang error
+                System.out.print("Input angka: ");
+            }
         }
-        int choice = scanner.nextInt();
-        scanner.nextLine(); // Konsumsi newline
-        return choice;
+    }
+
+    private double getDoubleInput() {
+        while (true) {
+            try {
+                double val = scanner.nextDouble();
+                scanner.nextLine(); // Konsumsi newline
+                return val;
+            } catch (InputMismatchException e) {
+                System.out.println("[!] Input harus berupa angka nominal yang valid! Silakan coba lagi.");
+                scanner.nextLine(); // Bersihkan buffer yang error
+                System.out.print("Input angka: ");
+            }
+        }
     }
 }

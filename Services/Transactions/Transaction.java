@@ -17,8 +17,8 @@ public class Transaction {
     private double amountPaid;
     private double change;
 
-    public Transaction(String transactionId, List<TransactionItem> items, double discountRate,
-                       String paymentMethod, double amountPaid) {
+    public Transaction(String transactionId, List<TransactionItem> items,
+                       double discountRate, String paymentMethod, double amountPaid) {
         this.transactionId = transactionId;
         this.dateTime = LocalDateTime.now();
         this.items = new ArrayList<>(items);

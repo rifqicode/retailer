@@ -43,13 +43,16 @@ public class ReportMenu {
 
     private int getUserChoice() {
         System.out.print("Pilih menu: ");
-        while (!scanner.hasNextInt()) {
-            System.out.println("Harap masukkan angka yang valid!");
-            scanner.next();
-            System.out.print("Pilihan: ");
+        while (true) {
+            try {
+                int choice = scanner.nextInt();
+                scanner.nextLine(); // Bersihkan newline
+                return choice;
+            } catch (java.util.InputMismatchException e) {
+                System.out.println("[!] Input harus berupa angka bulat! Silakan coba lagi.");
+                scanner.nextLine();
+                System.out.print("Pilih menu: ");
+            }
         }
-        int choice = scanner.nextInt();
-        scanner.nextLine(); // Bersihkan newline
-        return choice;
     }
 }

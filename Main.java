@@ -60,13 +60,16 @@ public class Main {
 
     private static int getUserChoice() {
         System.out.print("Pilih opsi menu: ");
-        while (!scanner.hasNextInt()) {
-            System.out.println("Harap masukkan angka yang valid!");
-            scanner.next();
-            System.out.print("Pilih opsi menu: ");
+        while (true) {
+            try {
+                int choice = scanner.nextInt();
+                scanner.nextLine(); // Konsumsi newline
+                return choice;
+            } catch (java.util.InputMismatchException e) {
+                System.out.println("[!] Input harus berupa angka bulat! Silakan coba lagi.");
+                scanner.nextLine();
+                System.out.print("Pilih opsi menu: ");
+            }
         }
-        int choice = scanner.nextInt();
-        scanner.nextLine(); // Konsumsi newline
-        return choice;
     }
 }

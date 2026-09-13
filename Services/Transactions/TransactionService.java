@@ -1,5 +1,7 @@
 package Services.Transactions;
 
+import Exceptions.InsufficientStockException;
+import Exceptions.ProductNotFoundException;
 import Services.Products.Product;
 import Services.Products.ProductService;
 
@@ -30,19 +32,19 @@ public class TransactionService {
         return 0.0;
     }
 
-    public Transaction processTransaction(List<TransactionItem> items, String paymentMethod, double amountPaid) {
+    public Transaction processTransaction(List<TransactionItem> items,
+                                          String paymentMethod, double amountPaid)
+            throws ProductNotFoundException, InsufficientStockException {
+
         if (items == null || items.isEmpty()) {
             throw new IllegalArgumentException("Daftar item belanja tidak boleh kosong.");
         }
 
-        // 1. Validasi stok sebelum diproses
+        // 1. Validasi keberadaan produk dan stok sebelum diproses
         for (TransactionItem item : items) {
             Product currentProduct = productService.getProductById(item.getProduct().getId());
-            if (currentProduct == null) {
-                throw new IllegalStateException("Produk '" + item.getProduct().getName() + "' tidak ditemukan di katalog.");
-            }
             if (currentProduct.getStock() < item.getQuantity()) {
-                throw new IllegalStateException("Stok untuk produk '" + currentProduct.getName() +
+                throw new InsufficientStockException("Stok untuk produk '" + currentProduct.getName() +
                         "' tidak mencukupi (Tersedia: " + currentProduct.getStock() + ", Diminta: " + item.getQuantity() + ").");
             }
         }

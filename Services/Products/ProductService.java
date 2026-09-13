@@ -1,5 +1,7 @@
 package Services.Products;
 
+import Exceptions.ProductNotFoundException;
+
 import java.util.ArrayList;
 
 public class ProductService {
@@ -37,64 +39,58 @@ public class ProductService {
             System.out.println("No products found.");
             return;
         }
-        System.out.printf("%-6s %-20s %-15s %-10s %s%n", "ID", "Name", "Category", "Price", "Stock");
-        System.out.println("-------------------------------------------------------------");
+        System.out.printf("%-6s %-25s %-15s %-12s %s%n", "ID", "Name", "Category", "Price", "Stock");
+        System.out.println("-------------------------------------------------------------------");
         for (Product product : products) {
             System.out.println(product);
         }
     }
 
-    public Product getProductById(int id) {
+    public Product getProductById(int id) throws ProductNotFoundException {
         for (Product product : products) {
             if (product.getId() == id) {
                 return product;
             }
         }
-        return null;
+        throw new ProductNotFoundException("Produk dengan ID " + id + " tidak ditemukan!");
     }
 
-    public Product updateProduct(int id, String name, String category, double price, int stock) {
+    public Product updateProduct(int id, String name, String category, double price, int stock) throws ProductNotFoundException {
         Product product = getProductById(id);
-        if (product != null) {
-            product.setName(name);
-            product.setCategory(category);
-            product.setPrice(price);
-            product.setStock(stock);
-        } else {
-            System.out.println("Product with ID " + id + " not found.");
-        }
-
+        product.setName(name);
+        product.setCategory(category);
+        product.setPrice(price);
+        product.setStock(stock);
+        System.out.println(">> Produk dengan ID " + id + " berhasil diperbarui.");
         return product;
     }
 
     public void searchProductsByName(String name) {
-        System.out.println("Search Results:");
-        System.out.printf("%-6s %-20s %-15s %-10s %s%n", "ID", "Name", "Category", "Price", "Stock");
+        System.out.println("\nHasil Pencarian untuk '" + name + "':");
+        boolean found = false;
+        System.out.printf("%-6s %-25s %-15s %-12s %s%n", "ID", "Name", "Category", "Price", "Stock");
+        System.out.println("-------------------------------------------------------------------");
         for (Product product : products) {
             if (product.getName().toLowerCase().contains(name.toLowerCase())) {
                 System.out.println(product);
+                found = true;
             }
         }
-    }
-
-    public void deleteProduct(int id) {
-        Product product = getProductById(id);
-        if (product != null) {
-            products.remove(product);
-            System.out.println("Product with ID " + id + " has been deleted.");
-        } else {
-            System.out.println("Product with ID " + id + " not found.");
+        if (!found) {
+            System.out.println(">> Tidak ada produk yang cocok dengan kata kunci '" + name + "'.");
         }
     }
 
-    public void updateStock(int id, int newStock) {
+    public void deleteProduct(int id) throws ProductNotFoundException {
         Product product = getProductById(id);
-        if (product != null) {
-            product.setStock(newStock);
-            System.out.println("Stock for product with ID " + id + " has been updated to " + newStock + ".");
-        } else {
-            System.out.println("Product with ID " + id + " not found.");
-        }
+        products.remove(product);
+        System.out.println(">> Produk '" + product.getName() + "' (ID: " + id + ") berhasil dihapus.");
+    }
+
+    public void updateStock(int id, int newStock) throws ProductNotFoundException {
+        Product product = getProductById(id);
+        product.setStock(newStock);
+        System.out.println(">> Stok untuk produk '" + product.getName() + "' berhasil diubah menjadi " + newStock + ".");
     }
 
     public ArrayList<Product> getAllProducts() {

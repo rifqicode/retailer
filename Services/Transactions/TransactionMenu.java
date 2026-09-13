@@ -1,9 +1,12 @@
 package Services.Transactions;
 
+import Exceptions.InsufficientStockException;
+import Exceptions.ProductNotFoundException;
 import Services.Products.Product;
 import Services.Products.ProductService;
 
 import java.util.ArrayList;
+import java.util.InputMismatchException;
 import java.util.List;
 import java.util.Scanner;
 
@@ -58,7 +61,6 @@ public class TransactionMenu {
         List<TransactionItem> cart = new ArrayList<>();
 
         while (true) {
-            // Tampilkan katalog produk
             productService.displayProducts();
 
             System.out.print("\nMasukkan ID Produk yang dibeli (ketik 0 untuk selesai memilih item): ");
@@ -67,9 +69,11 @@ public class TransactionMenu {
                 break;
             }
 
-            Product selectedProduct = productService.getProductById(productId);
-            if (selectedProduct == null) {
-                System.out.println("[!] Produk dengan ID " + productId + " tidak ditemukan!");
+            Product selectedProduct;
+            try {
+                selectedProduct = productService.getProductById(productId);
+            } catch (ProductNotFoundException e) {
+                System.out.println("[!] Kesalahan: " + e.getMessage());
                 continue;
             }
 
@@ -78,7 +82,7 @@ public class TransactionMenu {
                 continue;
             }
 
-            // Cek jumlah yang sudah ada di cart
+            // Hitung jumlah yang sudah masuk keranjang sementara
             int qtyInCart = 0;
             TransactionItem existingItem = null;
             for (TransactionItem item : cart) {
@@ -91,7 +95,7 @@ public class TransactionMenu {
 
             int maxAvailable = selectedProduct.getStock() - qtyInCart;
             if (maxAvailable <= 0) {
-                System.out.println("[!] Anda sudah memasukkan semua stok yang tersedia ke keranjang!");
+                System.out.println("[!] Anda sudah memasukkan seluruh stok yang tersedia ke keranjang!");
                 continue;
             }
 
@@ -116,7 +120,6 @@ public class TransactionMenu {
 
             System.out.printf(">> %d unit '%s' berhasil dimasukkan ke keranjang.%n", qty, selectedProduct.getName());
 
-            // Tampilkan ringkasan sementara keranjang
             displayCartPreview(cart);
 
             System.out.print("\nTambah item lain? (1 = Ya, 2 = Selesai & Lanjut Bayar, 0 = Batalkan Transaksi): ");
@@ -134,12 +137,11 @@ public class TransactionMenu {
             return;
         }
 
-        // Lanjut ke Proses Pembayaran
         handleCheckout(cart);
     }
 
     private void displayCartPreview(List<TransactionItem> cart) {
-        System.out.println("\n--- Keranjang Belanja Saat Ini ---");
+        System.out.println("\n--- Keranjang Belanja Sementara ---");
         System.out.printf("%-20s %-5s %-12s %s%n", "Item", "Qty", "Harga", "Subtotal");
         System.out.println("--------------------------------------------------");
         double subtotal = 0;
@@ -172,7 +174,7 @@ public class TransactionMenu {
         if (discountAmount > 0) {
             System.out.printf("Diskon (%.0f%%)          : -Rp%.0f (Promo Belanja)%n", (discountRate * 100), discountAmount);
         } else {
-            System.out.println("Diskon                : Rp0 (Belanja min. Rp500.000 untuk diskon 5%, Rp1.000.000 untuk 10%)");
+            System.out.println("Diskon                : Rp0 (Belanja min. Rp500.000 diskon 5%%, min. Rp1.000.000 diskon 10%%)");
         }
         System.out.printf("TOTAL TAGIHAN         : Rp%.0f%n", grandTotal);
         System.out.println("==========================================");
@@ -198,7 +200,7 @@ public class TransactionMenu {
                 amountPaid = getDoubleInput();
 
                 if (amountPaid < grandTotal) {
-                    System.out.printf("[!] Uang kurang Rp%.0f! Silakan bayar sesuai atau lebih dari total tagihan.%n", (grandTotal - amountPaid));
+                    System.out.printf("[!] Uang kurang Rp%.0f! Harap masukkan nominal yang mencukupi.%n", (grandTotal - amountPaid));
                     System.out.print("Coba lagi? (1 = Ya, 0 = Batalkan Transaksi): ");
                     int retry = getIntInput();
                     if (retry == 0) {
@@ -217,7 +219,7 @@ public class TransactionMenu {
             System.out.println("Atas Nama     : Retailer Store Official");
             System.out.printf("Jumlah Bayar  : Rp%.0f%n", grandTotal);
             System.out.println("-------------------------------");
-            System.out.print("Konfirmasi bahwa transfer sudah diterima? (1 = Ya / Selesai, 0 = Batal): ");
+            System.out.print("Konfirmasi penerimaan transfer? (1 = Ya, 0 = Batal): ");
             int confirm = getIntInput();
             if (confirm != 1) {
                 System.out.println(">> Transaksi dibatalkan.");
@@ -228,11 +230,14 @@ public class TransactionMenu {
             return;
         }
 
-        // Proses di TransactionService
         try {
             Transaction trx = transactionService.processTransaction(cart, paymentMethod, amountPaid);
             System.out.println("\n>> Transaksi BERHASIL diproses!");
             trx.printReceipt();
+        } catch (ProductNotFoundException e) {
+            System.out.println("[ERROR] Produk tidak ditemukan: " + e.getMessage());
+        } catch (InsufficientStockException e) {
+            System.out.println("[ERROR] Stok tidak mencukupi: " + e.getMessage());
         } catch (Exception e) {
             System.out.println("[ERROR] Gagal memproses transaksi: " + e.getMessage());
         }
@@ -260,24 +265,30 @@ public class TransactionMenu {
     }
 
     private int getIntInput() {
-        while (!scanner.hasNextInt()) {
-            System.out.println("Harap masukkan angka yang valid!");
-            scanner.next();
-            System.out.print("Pilihan: ");
+        while (true) {
+            try {
+                int val = scanner.nextInt();
+                scanner.nextLine(); // Konsumsi newline
+                return val;
+            } catch (InputMismatchException e) {
+                System.out.println("[!] Input harus berupa angka bulat! Silakan coba lagi.");
+                scanner.nextLine(); // Bersihkan buffer input error
+                System.out.print("Input angka: ");
+            }
         }
-        int val = scanner.nextInt();
-        scanner.nextLine(); // Bersihkan newline
-        return val;
     }
 
     private double getDoubleInput() {
-        while (!scanner.hasNextDouble()) {
-            System.out.println("Harap masukkan angka nominal yang valid!");
-            scanner.next();
-            System.out.print("Nominal: ");
+        while (true) {
+            try {
+                double val = scanner.nextDouble();
+                scanner.nextLine(); // Konsumsi newline
+                return val;
+            } catch (InputMismatchException e) {
+                System.out.println("[!] Input harus berupa angka nominal yang valid! Silakan coba lagi.");
+                scanner.nextLine(); // Bersihkan buffer input error
+                System.out.print("Input angka: ");
+            }
         }
-        double val = scanner.nextDouble();
-        scanner.nextLine(); // Bersihkan newline
-        return val;
     }
 }

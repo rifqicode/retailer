@@ -51,9 +51,9 @@ public class Main {
 
     private static void displayMainMenu() {
         System.out.println("\n========== MENU UTAMA ==========");
-        System.out.println("1. Manajemen Produk (Product)");
-        System.out.println("2. Pemrosesan Transaksi (Kasir)");
-        System.out.println("3. Laporan & Analitik (Reports)");
+        System.out.println("1. Manajemen Produk");
+        System.out.println("2. Pemrosesan Transaksi");
+        System.out.println("3. Laporan & Analitik");
         System.out.println("99. Keluar");
         System.out.println("================================");
     }
